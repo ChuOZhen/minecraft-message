@@ -1,0 +1,23 @@
+# Gradle / Loom
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.eclipse/
+bin/
+run/
+
+# 开发用运行目录（Loom runServer / runClient）
+run-server/
+run-client/
+
+# 开发调试脚本：内含本地 RCON 明文密码，不要进仓库
+rcon.ps1
+
+# 操作系统
+.DS_Store
+Thumbs.db
