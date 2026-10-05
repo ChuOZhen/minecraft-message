@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "msgboard",
+	"version": "${version}",
+	"name": "留言板 MessageBoard",
+	"description": "离线留言板：给不在线的玩家留言，对方下次进入服务器时在聊天栏收到可点击展开的提示。仅需装在服务端。",
+	"authors": [
+		"MessageBoard"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/msgboard/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.msgboard.MessageBoardMod"
+		],
+		"client": [
+			"com.msgboard.client.MessageBoardClient"
+		]
+	},
+	"mixins": [
+		"msgboard.mixins.json",
+		{
+			"config": "msgboard.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
