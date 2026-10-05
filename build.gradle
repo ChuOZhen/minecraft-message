@@ -1,0 +1,122 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+version = project.version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	// Loom 会自动加入获取 Minecraft 与依赖所需的仓库。
+	// 需要依赖其他模组时在此添加。
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"msgboard" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+	// 客户端与服务端各自使用独立 run 目录，避免两个进程抢同一个 logs/latest.log。
+	// client 带 quickPlay 参数，启动后会自动连到本地服务端，便于端到端验证。
+	runs {
+		server {
+			server()
+			name = "MessageBoard Dev Server"
+			runDir 'run-server'
+			programArgs '--nogui'
+			programArgs '--port', '25565'
+		}
+		client {
+			client()
+			name = "MessageBoard Dev Client"
+			runDir 'run-client'
+			// 必须一次性传入，多次调用 programArgs 会互相覆盖。
+			programArgs '--quickPlayMultiplayer', 'localhost:25565', '--username', 'DevTester'
+		}
+	}
+}
+
+dependencies {
+	// 26.1 起 Minecraft 未混淆，无需 mappings 行。
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// 单元测试：Fabric Loader JUnit（让 JUnit 能在 Minecraft 环境下跑）
+	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
+	testImplementation platform('org.junit:junit-bom:5.11.4')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'passed', 'failed', 'skipped'
+		showStandardStreams = true
+	}
+}
+
+// 端到端测试：客户端游戏测试（真实启动一个 26.3 客户端 + 一个专用服务端）。
+// 这也是本模组唯一无法用单元测试覆盖的部分——「玩家进服后到底收到了什么」。
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "msgboard-test"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true // 同意 Minecraft EULA，仅用于本地自动化测试
+	}
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName"}
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	repositories {
+		// 发布目标仓库，与上面的 repositories 无关。
+	}
+}
